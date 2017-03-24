@@ -24,7 +24,7 @@ namespace Affin
 		private void PbCanvas_MouseDown(object sender, MouseEventArgs e)
 		{
 			if ((e.Button & MouseButtons.Left) != 0)
-				_model.CaptureOrCreatePoint(e.Location);
+				_model.CaptureOrCreatePoint(e.Location.X, e.Location.Y);
 		}
 
 		private void pbCanvas_MouseMove(object sender, MouseEventArgs e)

@@ -9,23 +9,31 @@ namespace Affin
 {
 	class RefPoint
 	{
-		private Point _point;
+		private Point p;
+		private float _x;
+		private float _y;
 
 		public RefPoint(Point p)
 		{
-			_point = p;
+			this.p = p;
 		}
 
-		public int X
+		public RefPoint(float x, float y)
 		{
-			get { return _point.X; }
-			set { _point.X = value; }
+			_x = x;
+			_y = y;
 		}
 
-		public int Y
+		public float X
 		{
-			get { return _point.Y; }
-			set { _point.Y = value; }
+			get { return _x; }
+			set { _x = value; }
+		}
+
+		public float Y
+		{
+			get { return _y; }
+			set { _y = value; }
 		}
 	}
 }

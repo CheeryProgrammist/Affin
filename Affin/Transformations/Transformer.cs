@@ -19,7 +19,7 @@ namespace Affin
 		{
 			var pMatrix = new PointsMatrix(points);
 			var transformed = pMatrix.Multiply(_transformMatrix);
-			return transformed.Rows.Select(r => new RefPoint(new Point(Convert.ToInt32(r[0]), Convert.ToInt32(r[1]))));
+			return transformed.Rows.Select(r => new RefPoint(r[0], r[1]));
 		}
 	}
 }

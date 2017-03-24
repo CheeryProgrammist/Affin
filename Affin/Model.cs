@@ -30,10 +30,10 @@ namespace Affin
 				g.Clear(Color.White);
 		}
 
-		public void CaptureOrCreatePoint(Point p)
+		public void CaptureOrCreatePoint(float x, float y)
 		{
 			var point =
-				_points.FirstOrDefault(pt => Math.Sqrt(Math.Pow(pt.X - p.X, 2) + Math.Pow(pt.Y - p.Y, 2)) < _captureRadius);
+				_points.FirstOrDefault(pt => Math.Sqrt(Math.Pow(pt.X - x, 2) + Math.Pow(pt.Y - y, 2)) < _captureRadius);
 
 			if (point != default(RefPoint))
 			{
@@ -41,7 +41,7 @@ namespace Affin
 				return;
 			}
 
-			_points.Add(new RefPoint(p));
+			_points.Add(new RefPoint(x, y));
 			RedrawField();
 		}
 
