@@ -35,8 +35,9 @@
 			// pbCanvas
 			// 
 			this.pbCanvas.BackColor = System.Drawing.Color.White;
-			this.pbCanvas.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.pbCanvas.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.pbCanvas.Location = new System.Drawing.Point(12, 12);
+			this.pbCanvas.Margin = new System.Windows.Forms.Padding(6);
 			this.pbCanvas.Name = "pbCanvas";
 			this.pbCanvas.Size = new System.Drawing.Size(480, 480);
 			this.pbCanvas.TabIndex = 0;

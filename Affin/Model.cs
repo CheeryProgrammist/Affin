@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
+using Affin.Entities;
 
 namespace Affin
 {
@@ -9,20 +11,23 @@ namespace Affin
 	{
 		private int _width;
 		private int _height;
+		private float _nodeRadius;
 		private Bitmap _canvas;
 		private Bitmap _bkgnd;
 
 		public event EventHandler<DrawingEventArgs> ModelRecalculated;
 
-		private List<RefPoint> _points = new List<RefPoint>();
-		private RefPoint _capturedPoint = default(RefPoint);
+		private List<Node> _rootNodes = Node.RootNodes;
+		private Node _capturedNode = default(Node);
 		private Color _currentColor = Color.Blue;
+		private Color _markColor = Color.IndianRed;
 		private double _captureRadius = 12;
 
 		public Model(int width = 480, int height = 480)
 		{
 			_width = width;
 			_height = height;
+			_nodeRadius = 3.5f;
 			_canvas = new Bitmap(_width, _height);
 			_bkgnd = new Bitmap(_width, _height);
 
@@ -30,18 +35,20 @@ namespace Affin
 				g.Clear(Color.White);
 		}
 
-		public void CaptureOrCreatePoint(float x, float y)
+		public void CaptureOrCreateNode(float x, float y, bool isMultiselection)
 		{
-			var point =
-				_points.FirstOrDefault(pt => Math.Sqrt(Math.Pow(pt.X - x, 2) + Math.Pow(pt.Y - y, 2)) < _captureRadius);
+			_capturedNode =
+				_rootNodes.FirstOrDefault(node => Math.Sqrt(Math.Pow(node.Position.X - x, 2) + Math.Pow(node.Position.Y - y, 2)) < _captureRadius);
 
-			if (point != default(RefPoint))
-			{
-				_capturedPoint = point;
-				return;
-			}
+			if (!isMultiselection)
+				foreach (var rootNode in _rootNodes)
+					rootNode.IsSelected = false;
 
-			_points.Add(new RefPoint(x, y));
+			if (_capturedNode != default(Node))
+				_capturedNode.IsSelected = true;
+			else
+				_rootNodes.Add(new Node(x, y, _nodeRadius));
+
 			RedrawField();
 		}
 
@@ -50,37 +57,45 @@ namespace Affin
 			_canvas = _bkgnd.Clone() as Bitmap;
 			using (var g = Graphics.FromImage(_canvas))
 			{
-				foreach (var p in _points)
-					g.DrawEllipse(new Pen(_currentColor), p.X - 3, p.Y - 3, 7, 7);
+				foreach (var node in _rootNodes)
+				{
+					var x = node.Position.X - (int)node.Radius;
+					var y = node.Position.Y - (int)node.Radius;
+					var diameter = node.Radius * 2;
+					g.DrawEllipse(new Pen(_currentColor), x, y, diameter, diameter);
+
+					if (node.IsSelected)
+						g.FillEllipse(new SolidBrush(_markColor), x + 1, y + 1, diameter - 2, diameter - 2);
+				}
 			}
 			ModelRecalculated?.Invoke(this, new DrawingEventArgs(_canvas));
 			GC.Collect();
 		}
 
-		public void MoveCapturedPoint(Point newLocation)
+		public void MoveCapturedNode(Point newLocation)
 		{
-			if (_capturedPoint == null)
+			if (_capturedNode == null)
 				return;
-			_capturedPoint.X = newLocation.X;
-			_capturedPoint.Y = newLocation.Y;
+			_capturedNode.Position.X = newLocation.X;
+			_capturedNode.Position.Y = newLocation.Y;
 			RedrawField();
 		}
 
 		public void ReleaseCapturedPoint()
 		{
-			if(_capturedPoint == null)
+			if (_capturedNode == null)
 				return;
 
-			if (_capturedPoint.X < 0
-			    || _capturedPoint.X > _width
-			    || _capturedPoint.Y < 0
-			    || _capturedPoint.Y > _height)
+			if (_capturedNode.Position.X < 0
+				|| _capturedNode.Position.X >= _width
+				|| _capturedNode.Position.Y < 0
+				|| _capturedNode.Position.Y >= _height)
 			{
-				_points.Remove(_capturedPoint);
+				_rootNodes.Remove(_capturedNode);
 				RedrawField();
 			}
 
-			_capturedPoint = null;
+			_capturedNode = null;
 		}
 	}
 }

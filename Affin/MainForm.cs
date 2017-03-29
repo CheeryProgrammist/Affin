@@ -5,7 +5,7 @@ namespace Affin
 {
 	public partial class MainForm : Form
 	{
-		private Model _model = new Model();
+		private Model _model;
 		public MainForm()
 		{
 			InitializeComponent();
@@ -13,6 +13,7 @@ namespace Affin
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
+			_model = new Model(pbCanvas.Width, pbCanvas.Height);
 			_model.ModelRecalculated += Model_ModelRecalculated;
 		}
 
@@ -24,13 +25,16 @@ namespace Affin
 		private void PbCanvas_MouseDown(object sender, MouseEventArgs e)
 		{
 			if ((e.Button & MouseButtons.Left) != 0)
-				_model.CaptureOrCreatePoint(e.Location.X, e.Location.Y);
+			{
+				var isMultiselection = (ModifierKeys & Keys.Control) != 0;
+				_model.CaptureOrCreateNode(e.Location.X, e.Location.Y, isMultiselection);
+			}
 		}
 
 		private void pbCanvas_MouseMove(object sender, MouseEventArgs e)
 		{
 			if ((e.Button & MouseButtons.Left) != 0)
-				_model.MoveCapturedPoint(e.Location);
+				_model.MoveCapturedNode(e.Location);
 		}
 
 		private void pbCanvas_MouseUp(object sender, MouseEventArgs e)
