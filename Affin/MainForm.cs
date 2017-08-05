@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Affin
 {
 	public partial class MainForm : Form
 	{
-		private Model _model;
+		private ViewModel _model;
+
 		public MainForm()
 		{
 			InitializeComponent();
@@ -13,7 +15,7 @@ namespace Affin
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
-			_model = new Model(pbCanvas.Width, pbCanvas.Height);
+			_model = new ViewModel(pbCanvas.Width, pbCanvas.Height);
 			_model.ModelRecalculated += Model_ModelRecalculated;
 		}
 
@@ -40,6 +42,17 @@ namespace Affin
 		private void pbCanvas_MouseUp(object sender, MouseEventArgs e)
 		{
 			_model.ReleaseCapturedPoint();
+		}
+
+		private void btnStart_Click(object sender, EventArgs e)
+		{
+			_model.IsAlive = true;
+			Task.Run(() => _model.QuantumTimeLoop());
+		}
+
+		private void btnStop_Click(object sender, EventArgs e)
+		{
+			_model.IsAlive = false;
 		}
 	}
 }

@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Threading;
 using Affin.Entities;
 
 namespace Affin
 {
-	class Model
+	class ViewModel
 	{
 		private int _width;
 		private int _height;
@@ -22,12 +22,13 @@ namespace Affin
 		private Color _currentColor = Color.Blue;
 		private Color _markColor = Color.IndianRed;
 		private double _captureRadius = 12;
+		private float _quantumTimeDuration = 100.0F / 6.0F;
 
-		public Model(int width = 480, int height = 480)
+		public ViewModel(int width = 480, int height = 480)
 		{
 			_width = width;
 			_height = height;
-			_nodeRadius = 3.5f;
+			_nodeRadius = 12.5f;
 			_canvas = new Bitmap(_width, _height);
 			_bkgnd = new Bitmap(_width, _height);
 
@@ -45,9 +46,9 @@ namespace Affin
 					rootNode.IsSelected = false;
 
 			if (_capturedNode != default(Node))
-				_capturedNode.IsSelected = true;
+				_capturedNode.InvertSelection();
 			else
-				_rootNodes.Add(new Node(x, y, _nodeRadius));
+				_rootNodes.Add(new MaterialPoint(x, y, _nodeRadius));
 
 			RedrawField();
 		}
@@ -59,9 +60,9 @@ namespace Affin
 			{
 				foreach (var node in _rootNodes)
 				{
-					var x = node.Position.X - (int)node.Radius;
-					var y = node.Position.Y - (int)node.Radius;
-					var diameter = node.Radius * 2;
+					var x = node.Position.X - (int)node.CapturingRadius;
+					var y = node.Position.Y - (int)node.CapturingRadius;
+					var diameter = node.CapturingRadius * 2;
 					g.DrawEllipse(new Pen(_currentColor), x, y, diameter, diameter);
 
 					if (node.IsSelected)
@@ -69,7 +70,6 @@ namespace Affin
 				}
 			}
 			ModelRecalculated?.Invoke(this, new DrawingEventArgs(_canvas));
-			GC.Collect();
 		}
 
 		public void MoveCapturedNode(Point newLocation)
@@ -97,5 +97,22 @@ namespace Affin
 
 			_capturedNode = null;
 		}
+
+		public void QuantumTimeLoop()
+		{
+			while (IsAlive)
+			{
+				foreach (var rootNode in _rootNodes)
+				{
+					((MaterialPoint)rootNode).ProceedQuantumTime(_quantumTimeDuration);
+					((MaterialPoint) rootNode).Speed.X+=0.0001F;
+					((MaterialPoint) rootNode).Speed.Y+=0.0001F;
+				}
+				RedrawField();
+				Thread.Sleep((int)_quantumTimeDuration);
+			}
+		}
+
+		public bool IsAlive { get; set; } = false;
 	}
 }
