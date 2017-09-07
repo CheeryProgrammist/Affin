@@ -18,10 +18,10 @@
 			_speed = new Vector2D();
 		}
 
-		public void ProceedQuantumTime(float quantumDuration)
+		public void ProceedQuantumTime(double quantumDuration)
 		{
-			Position.X += _speed.X * quantumDuration;
-			Position.Y += _speed.Y * quantumDuration;
+			Position.X += (float) (_speed.X * quantumDuration);
+			Position.Y += (float) (_speed.Y * quantumDuration);
 		}
 	}
 

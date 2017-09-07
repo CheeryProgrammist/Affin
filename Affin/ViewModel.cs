@@ -1,118 +1,90 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
-using Affin.Entities;
+using System.Threading.Tasks;
 
 namespace Affin
 {
 	class ViewModel
 	{
-		private int _width;
-		private int _height;
-		private float _nodeRadius;
+		private readonly Graphics _graph;
 		private Bitmap _canvas;
 		private Bitmap _bkgnd;
+		private Stopwatch _quantumCounter;
+		
+		private Pen _currentPen;
+		private SolidBrush _markBrush;
+		private double _quantumTimeDuration;
+		private Model _model;
+		public bool IsAlive { get; set; } = false;
+		public event EventHandler EndDraw;
 
-		public event EventHandler<DrawingEventArgs> ModelRecalculated;
-
-		private List<Node> _rootNodes = Node.RootNodes;
-		private Node _capturedNode = default(Node);
-		private Color _currentColor = Color.Blue;
-		private Color _markColor = Color.IndianRed;
-		private double _captureRadius = 12;
-		private float _quantumTimeDuration = 100.0F / 6.0F;
-
-		public ViewModel(int width = 480, int height = 480)
+		public ViewModel(Graphics graph, int width = 480, int height = 480)
 		{
-			_width = width;
-			_height = height;
-			_nodeRadius = 12.5f;
-			_canvas = new Bitmap(_width, _height);
-			_bkgnd = new Bitmap(_width, _height);
-
+			_model = new Model(width, height);
+			_quantumTimeDuration = 0;
+			_graph = graph;
+			_canvas = new Bitmap(width, height);
+			_bkgnd = new Bitmap(width, height);
+			_currentPen = new Pen(Color.Blue);
+			_markBrush = new SolidBrush(Color.IndianRed);
+			_quantumCounter = new Stopwatch();
 			using (var g = Graphics.FromImage(_bkgnd))
 				g.Clear(Color.White);
 		}
 
 		public void CaptureOrCreateNode(float x, float y, bool isMultiselection)
 		{
-			_capturedNode =
-				_rootNodes.FirstOrDefault(node => Math.Sqrt(Math.Pow(node.Position.X - x, 2) + Math.Pow(node.Position.Y - y, 2)) < _captureRadius);
-
-			if (!isMultiselection)
-				foreach (var rootNode in _rootNodes)
-					rootNode.IsSelected = false;
-
-			if (_capturedNode != default(Node))
-				_capturedNode.InvertSelection();
-			else
-				_rootNodes.Add(new MaterialPoint(x, y, _nodeRadius));
-
+			_model.CaptureOrCreateNode(x, y, isMultiselection);
 			RedrawField();
 		}
 
 		private void RedrawField()
 		{
-			_canvas = _bkgnd.Clone() as Bitmap;
-			using (var g = Graphics.FromImage(_canvas))
+			_graph.Clear(Color.White);
+			foreach (var node in _model.RootNodes)
 			{
-				foreach (var node in _rootNodes)
-				{
-					var x = node.Position.X - (int)node.CapturingRadius;
-					var y = node.Position.Y - (int)node.CapturingRadius;
-					var diameter = node.CapturingRadius * 2;
-					g.DrawEllipse(new Pen(_currentColor), x, y, diameter, diameter);
+				var x = node.Position.X - (int) node.CapturingRadius;
+				var y = node.Position.Y - (int) node.CapturingRadius;
+				var diameter = node.CapturingRadius * 2;
+				_graph.DrawEllipse(_currentPen, x, y, diameter, diameter);
 
-					if (node.IsSelected)
-						g.FillEllipse(new SolidBrush(_markColor), x + 1, y + 1, diameter - 2, diameter - 2);
-				}
+				if (node.IsSelected)
+					_graph.FillEllipse(_markBrush, x + 1, y + 1, diameter - 2, diameter - 2);
+
 			}
-			ModelRecalculated?.Invoke(this, new DrawingEventArgs(_canvas));
+			EndDraw?.Invoke(this, null);
 		}
 
 		public void MoveCapturedNode(Point newLocation)
 		{
-			if (_capturedNode == null)
-				return;
-			_capturedNode.Position.X = newLocation.X;
-			_capturedNode.Position.Y = newLocation.Y;
+			_model.MoveCapturedNode(newLocation);
 			RedrawField();
 		}
 
 		public void ReleaseCapturedPoint()
 		{
-			if (_capturedNode == null)
-				return;
-
-			if (_capturedNode.Position.X < 0
-				|| _capturedNode.Position.X >= _width
-				|| _capturedNode.Position.Y < 0
-				|| _capturedNode.Position.Y >= _height)
-			{
-				_rootNodes.Remove(_capturedNode);
-				RedrawField();
-			}
-
-			_capturedNode = null;
+			_model.ReleaseCapturedPoint();
+			RedrawField();
 		}
 
 		public void QuantumTimeLoop()
 		{
 			while (IsAlive)
 			{
-				foreach (var rootNode in _rootNodes)
+				_quantumCounter.Start();
+				var task = Task.Run(() =>
 				{
-					((MaterialPoint)rootNode).ProceedQuantumTime(_quantumTimeDuration);
-					((MaterialPoint) rootNode).Speed.X+=0.0001F;
-					((MaterialPoint) rootNode).Speed.Y+=0.0001F;
-				}
-				RedrawField();
-				Thread.Sleep((int)_quantumTimeDuration);
+					_model.ProceedTime(_quantumTimeDuration);
+					RedrawField();
+				});
+				Thread.Sleep(2);
+				task.Wait();
+				_quantumTimeDuration = _quantumCounter.Elapsed.TotalMilliseconds;
+				_quantumCounter.Reset();
 			}
 		}
 
-		public bool IsAlive { get; set; } = false;
 	}
 }
