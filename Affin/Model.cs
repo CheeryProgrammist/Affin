@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
+using Affin.Effects;
 using Affin.Entities;
 
 namespace Affin
@@ -15,12 +16,14 @@ namespace Affin
 		}
 
 		private List<Node> _rootNodes = Node.RootNodes;
+		private List<IEffect> _effects = new List<IEffect>();
 		private Node _capturedNode = default(Node);
 		private float _nodeRadius;
 		private double _captureRadius = 12;
 		private int _width;
 		private int _height;
 		private readonly bool _isTransparentBorders;
+		private static readonly float _timeScale = 0.01f;
 
 		public Model(int width, int height)
 		{
@@ -28,17 +31,32 @@ namespace Affin
 			_nodeRadius = 12.5f;
 			_width = width;
 			_height = height;
+			_effects.Add(new Gravity(0, 9.8f));
 		}
 
 		public void ProceedTime(double quantumTime)
 		{
+			quantumTime *= _timeScale;
+
 			foreach (var rootNode in _rootNodes)
 			{
-				((MaterialPoint)rootNode).ProceedQuantumTime(quantumTime);
-				((MaterialPoint)rootNode).Speed.X += 0.0001F;
-				((MaterialPoint)rootNode).Speed.Y += 0.0001F;
-				if (_isTransparentBorders)
-					HandleOut();
+				foreach (var effect in _effects)
+					effect.ApplyTo(rootNode as MaterialPoint, quantumTime);
+				var point = rootNode as MaterialPoint;
+				if(point == null)
+					continue;
+				point.ProceedQuantumTime(quantumTime);
+
+				var bottom = point.Position.Y + _nodeRadius+3;
+				if (bottom > _height)
+				{
+					point.Position.Y -= bottom - _height;
+					point.Speed.Y = -point.Speed.Y;
+				}
+			}
+			if (_isTransparentBorders)
+			{
+				HandleOut();
 			}
 		}
 

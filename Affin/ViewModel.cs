@@ -79,7 +79,7 @@ namespace Affin
 					_model.ProceedTime(_quantumTimeDuration);
 					RedrawField();
 				});
-				Thread.Sleep(2);
+				Thread.Sleep(10);
 				task.Wait();
 				_quantumTimeDuration = _quantumCounter.Elapsed.TotalMilliseconds;
 				_quantumCounter.Reset();

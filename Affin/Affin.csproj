@@ -46,6 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Effects\Gravity.cs" />
+    <Compile Include="Effects\IEffect.cs" />
     <Compile Include="Entities\MaterialPoint.cs" />
     <Compile Include="Entities\Node.cs" />
     <Compile Include="Entities\Vector2D.cs" />
