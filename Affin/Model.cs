@@ -18,36 +18,37 @@ namespace Affin
 		private List<Node> _rootNodes = Node.RootNodes;
 		private List<IEffect> _effects = new List<IEffect>();
 		private Node _capturedNode = default(Node);
-		private float _nodeRadius;
+		private float _nodeRadius = 12.5f;
 		private double _captureRadius = 12;
 		private int _width;
 		private int _height;
-		private readonly bool _isTransparentBorders;
-		private static readonly float _timeScale = 0.01f;
+		private readonly bool _isTransparentBorders = true;
+		private static readonly float _timeScale = (float)(1.0/128.0);
+		private static readonly Random _rnd = new Random((int)DateTime.Now.TimeOfDay.TotalMinutes);
 
-		public Model(int width, int height)
+		public Model()
 		{
-			_isTransparentBorders = true;
-			_nodeRadius = 12.5f;
-			_width = width;
-			_height = height;
+			LoadEffects();
+		}
+
+		private void LoadEffects()
+		{
 			_effects.Add(new Gravity(0, 9.8f));
 		}
 
 		public void ProceedTime(double quantumTime)
 		{
 			quantumTime *= _timeScale;
-
 			foreach (var rootNode in _rootNodes)
 			{
 				foreach (var effect in _effects)
 					effect.ApplyTo(rootNode as MaterialPoint, quantumTime);
 				var point = rootNode as MaterialPoint;
-				if(point == null)
+				if (point == null)
 					continue;
 				point.ProceedQuantumTime(quantumTime);
 
-				var bottom = point.Position.Y + _nodeRadius+3;
+				var bottom = point.Position.Y + _nodeRadius + 3;
 				if (bottom > _height)
 				{
 					point.Position.Y -= bottom - _height;
@@ -80,8 +81,12 @@ namespace Affin
 
 		public void CaptureOrCreateNode(float x, float y, bool isMultiselection)
 		{
-			if(!TryCapture(x, y, isMultiselection))
-				_rootNodes.Add(new MaterialPoint(x, y, _nodeRadius));
+			if (!TryCapture(x, y, isMultiselection))
+			{
+				var point = new MaterialPoint(x, y, _nodeRadius);
+				point.Speed.X = _rnd.Next(200) - 100;
+				_rootNodes.Add(point);
+			}
 				
 		}
 
@@ -123,6 +128,20 @@ namespace Affin
 			}
 
 			_capturedNode = null;
+		}
+
+		public void SetFieldSize(int width, int height)
+		{
+			_width = width;
+			_height = height;
+		}
+
+		public void SelectAll()
+		{
+			foreach (var node in _rootNodes)
+			{
+				node.IsSelected = true;
+			}
 		}
 	}
 }
